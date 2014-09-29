@@ -1,0 +1,133 @@
+//Reading and Returning Letters
+
+//Canvas setup
+int canvasWidth = 750;
+int canvasHeight = 500;
+
+//Letters
+char[] letters = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'};
+int letter = 0;
+char inputKey;
+PShape[] letterShapes = new PShape[letters.length];
+
+//Booleans
+boolean fileLoaded = false;
+boolean allowRecord = true;
+boolean verticesDone = false;
+boolean doneCreating = false;
+
+//File input
+int numOfPoints = 0;
+
+//User
+String name = "Kevin";
+
+void setup()
+{
+  size(canvasWidth, canvasHeight, P2D); //Need P2D for PShape
+}
+
+void draw()
+{
+  createPShapes();
+  returnLetters();
+}
+
+void createPShapes()
+{
+  checkLetter();
+  if (!doneCreating)
+  {
+    loadFile();
+    declareVertices();
+  }
+}
+
+void loadFile()
+{
+  if (!fileLoaded)
+  {
+    String lines[] = loadStrings("/Users/KevinHou/Documents/Processing/Handwriting_Input_List/" + name + letters[letter] + ".txt");
+    numOfPoints = lines.length;
+    println("There are " + numOfPoints + " points in PShape '" + letters[letter] + "'");
+    fileLoaded = true;
+  }
+}
+
+void declareVertices()
+{
+  beginRecording();
+  if (!verticesDone)
+  {
+    for (int i = 0; i < numOfPoints; i++)
+    {
+      String lines[] = loadStrings("/Users/KevinHou/Documents/Processing/Handwriting_Input_List/" + name + letters[letter] + ".txt");
+      int coordinates[] = int(split(lines[i], ',')); //Extract coordinates from .txt file
+      letterShapes[letter].vertex(coordinates[0], coordinates[1]);
+    }
+    for (int j = numOfPoints-1; j > 0; j = j-1)
+    {
+      String lines[] = loadStrings("/Users/KevinHou/Documents/Processing/Handwriting_Input_List/" + name + letters[letter] + ".txt");
+      int coordinates[] = int(split(lines[j], ',')); //Extract coordinates from .txt file
+      letterShapes[letter].vertex(coordinates[0], coordinates[1]);
+    }
+    verticesDone = true;
+  }
+  endRecording();
+}
+
+void beginRecording()
+{
+  println("Creating PShape for: " + letters[letter]);
+  if (allowRecord)
+  {
+    letterShapes[letter] = createShape();
+    letterShapes[letter].beginShape();
+    allowRecord = false;
+  }
+}
+
+void endRecording()
+{
+  if (!allowRecord & verticesDone)
+  {
+    letterShapes[letter].endShape();
+    if (!allowRecord)
+    {
+      letter++; //Next letter
+    }
+    fileLoaded = false;
+    allowRecord = true;
+    verticesDone = false;
+  }
+}
+
+void checkLetter()
+{
+  if (letter >= 26)
+  {
+    if (!doneCreating)
+    {
+      println("Finished creating shapes");
+    }
+    doneCreating = true;
+  }
+}
+
+void returnLetters() //For testing letters
+{
+  if (keyPressed)
+  {
+    inputKey = key;
+    for (int i = 0; i<26; i++)
+    {
+      if (inputKey == letters[i])
+      {
+        background(255); //Clear background
+        println("Input: " + inputKey);
+        shape(letterShapes[i], 0, 0);
+        println("Loaded PShape for " + letters[i]);
+      }
+    }
+  }
+}
