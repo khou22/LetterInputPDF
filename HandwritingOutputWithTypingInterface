@@ -1,0 +1,319 @@
+//Kevin Hou
+//Reading and Returning Letters
+
+//ControlP5 Libraries
+import controlP5.*;
+import processing.pdf.*;
+ControlP5 cp5;
+
+//Canvas setup
+int canvasWidth = 750;
+int canvasHeight = 500;
+int inputCanvasWidth = 100;
+int inputCanvasHeight = 100;
+
+//Letters
+char[] letters = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'};
+int letter = 0;
+PShape[] letterShapes = new PShape[letters.length];
+
+//Booleans
+boolean fileLoaded = false;
+boolean allowRecord = true;
+boolean verticesDone = false;
+boolean doneCreating = false;
+
+//File input
+int numOfPoints = 0;
+
+//User
+String name = "Kevin";
+
+//Typing
+int xPosition = 10;
+int yPosition = 50;
+int letterHeight = ((4*inputCanvasHeight)/7);
+char inputKey;
+int smallestX = 100;
+int largestX = 0;
+int smallestY = letterHeight;
+int largestY = 0;
+boolean typing = false;
+boolean firstTime = true;
+int letterWeight = 3;
+int previousLetter = 0;
+int lineNumber = 0;
+
+//Buttons
+int unitButtonX = (canvasWidth-20)/20;
+int unitButtonY = (canvasWidth-20)/20;
+
+//Time
+int time = 0;
+
+//******************************************************************
+
+void setup()
+{
+  size(canvasWidth, canvasHeight, P2D); //Need P2D for PShape
+  cp5 = new ControlP5(this); //Create a ContorlP5 object to draw sliders and buttons
+}
+
+void draw()
+{
+  createPShapes();
+  returnLetters();
+}
+
+//******************************************************************
+
+void createPShapes()
+{
+  checkLetter();
+  if (!doneCreating)
+  {
+    loadFile();
+    declareVertices();
+  }
+}
+
+void loadFile()
+{
+  if (!fileLoaded)
+  {
+    String lines[] = loadStrings("/Users/KevinHou/Documents/Processing/Handwriting_Input_List/" + name + letters[letter] + ".txt");
+    numOfPoints = lines.length;
+    println("There are " + numOfPoints + " points in PShape '" + letters[letter] + "'");
+    fileLoaded = true;
+  }
+}
+
+void declareVertices()
+{
+  beginRecording();
+  if (!verticesDone)
+  {
+    for (int i = 0; i < numOfPoints; i++)
+    {
+      String lines[] = loadStrings("/Users/KevinHou/Documents/Processing/Handwriting_Input_List/" + name + letters[letter] + ".txt");
+      int coordinates[] = int(split(lines[i], ',')); //Extract coordinates from .txt file
+      letterShapes[letter].vertex(coordinates[0], coordinates[1]);
+    }
+    for (int j = numOfPoints-1; j > 0; j = j-1)
+    {
+      String lines[] = loadStrings("/Users/KevinHou/Documents/Processing/Handwriting_Input_List/" + name + letters[letter] + ".txt");
+      int coordinates[] = int(split(lines[j], ',')); //Extract coordinates from .txt file
+      letterShapes[letter].vertex(coordinates[0], coordinates[1]);
+    }
+    verticesDone = true;
+  }
+  endRecording();
+}
+
+void beginRecording()
+{
+  println("Creating PShape for: " + letters[letter]);
+  if (allowRecord)
+  {
+    letterShapes[letter] = createShape();
+    letterShapes[letter].beginShape();
+    allowRecord = false;
+  }
+}
+
+void endRecording()
+{
+  if (!allowRecord & verticesDone)
+  {
+    letterShapes[letter].endShape();
+    if (!allowRecord)
+    {
+      letter++; //Next letter
+    }
+    fileLoaded = false;
+    allowRecord = true;
+    verticesDone = false;
+  }
+}
+
+void checkLetter()
+{
+  if (letter >= 26)
+  {
+    if (!doneCreating)
+    {
+      println("Finished creating shapes");
+    }
+    doneCreating = true;
+  }
+}
+
+void returnLetters() //For testing letters
+{
+  checkLine(); //Check if still on right row
+  setupWindow(); //Setup canvas
+  referenceLines(2, 0); //Draw reference lines
+//  curser();
+  typeLetters(); //Type letters
+}
+
+void curser()
+{
+  strokeWeight(4);
+  if (time == second())
+  {
+    stroke(0);
+    line(xPosition, yPosition, xPosition, letterHeight+50);
+  }
+  if (time != second())
+  {
+    stroke(255);
+    line(xPosition, yPosition, xPosition, letterHeight);
+    time = second();
+  }
+  
+}
+
+void referenceLines(int strokeWeight, int strokeColor)
+{
+  strokeWeight(strokeWeight);
+  stroke(strokeColor);
+  for (int i = letterHeight + 50; i < canvasHeight; i = i + letterHeight)
+  {
+    line(10, i, canvasWidth - 10, i);
+  }
+}
+
+void typeLetters() //Actual Typing
+{
+  if (keyPressed & !typing)
+  {
+    typing = true;
+    inputKey = key;
+    for (int i = 0; i < 26; i++)
+    {
+      if (inputKey == letters[i] & typing)
+      {
+        letterFormat(letterWeight, 0, i);
+        shape(letterShapes[i], xPosition - smallestX, (lineNumber*letterHeight)+yPosition); //call corresponding pshape
+        xPosition = xPosition + letterWidth(i); //New xPosition
+        previousLetter = i; //For deleting purposes
+      }
+      else if (inputKey == BACKSPACE & typing)
+      {
+        backspace();
+      }
+    }
+  }
+}
+
+int letterWidth(int inputLetter) //Find width of letter
+{
+  String lines[] = loadStrings("/Users/KevinHou/Documents/Processing/Handwriting_Input_List/" + name + letters[inputLetter] + ".txt");
+  for (int i = 0; i < lines.length; i++)
+  {
+    int coordinates[] = int(split(lines[i], ',')); //Extract coordinates from .txt file
+    if (coordinates[0] < smallestX)
+    {
+      smallestX = coordinates[0]; //find smallest X
+      println("Smallest X coordinate is " + smallestX);
+    }
+    if (coordinates[0] > largestX)
+    {
+      largestX = coordinates[0]; //find largest X
+      println("Largest X coordinate is " + largestX);
+    }
+  }
+  int val = largestX - smallestX; //Find width of letter
+  println(smallestX + ", " + largestX);
+  println("Width of letter '" + letters[inputLetter] + "' is " + val);
+  return val; //return width of letter
+}
+
+int letterHeight(int inputLetter) //Find height of letter
+{
+  String lines[] = loadStrings("/Users/KevinHou/Documents/Processing/Handwriting_Input_List/" + name + letters[inputLetter] + ".txt");
+  for (int i = 0; i < lines.length; i++)
+  {
+    int coordinates[] = int(split(lines[i], ',')); //Extract coordinates from .txt file
+    if (coordinates[1] < smallestY)
+    {
+      smallestY = coordinates[1]; //find smallest Y
+      println("Smallest Y coordinate is " + smallestY);
+    }
+    if (coordinates[1] > largestY)
+    {
+      largestY = coordinates[1]; //find largest Y
+      println("Largest Y coordinate is " + largestY);
+    }
+  }
+  int val = largestY - smallestY; //Find width of letter
+  println(smallestY + ", " + largestY);
+  println("Height of letter '" + letters[inputLetter] + "' is " + val);
+  return val; //return width of letter
+}
+
+void letterFormat(int letterWeight, int letterColor, int i) //Format letters
+{
+  letterShapes[i].strokeWeight(letterWeight);
+  letterShapes[i].stroke(letterColor);
+}
+
+void setupWindow()
+{
+  if (firstTime) //Conditional
+  {
+    addButtonsAndSliders(); //Add buttons and sliders
+    background(255); //Clear screen and set background color to white
+    firstTime = false; //set conditional to never repeat
+  }
+}
+
+void keyReleased() //Prevent multiple inputs
+{
+  typing = false;
+}
+
+void addButtonsAndSliders()
+{
+    cp5.addButton("boldFormat")
+    .setBroadcast(false)
+    .setPosition(10, 10)
+    .setSize(unitButtonX, unitButtonY)
+    .setLabel("Bold")
+    .setBroadcast(true)
+    .getCaptionLabel().setFont(createFont("Arial", 10)).toUpperCase(false).align(CENTER, CENTER)
+    ;
+}
+
+void boldFormat() //If "Bold" button pressed
+{
+  if (letterWeight == 2) //If not bold
+  {
+    letterWeight = 10; //Set bold
+    println("Font is now bold");
+  }
+  else //If bold
+  {
+    letterWeight = 2; //Set not bold
+    println("Font is no longer bold");
+  }
+}
+
+void backspace() //Function for backspace
+{
+  strokeWeight(3);
+  stroke(255);
+  fill(255);
+  rect((xPosition-letterWidth(previousLetter)), (lineNumber*letterHeight)+yPosition, letterWidth(previousLetter), letterHeight(previousLetter)+5); //Rectangle to "erase" previous letter
+  xPosition = xPosition-letterWidth(previousLetter);
+}
+
+void checkLine() //Check wrap text
+{
+  if (xPosition+100 > canvasWidth-10)
+  {
+    lineNumber = lineNumber + 1;
+    xPosition = 10;
+  }
+}
