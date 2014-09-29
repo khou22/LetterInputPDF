@@ -1,0 +1,147 @@
+//Kevin Hou Handwriting Font Program
+//Help of Natalie Freed
+import controlP5.*; //Import libraries
+import processing.pdf.*;
+
+//General variables
+boolean mouseClicked = false;
+int inputCanvasWidth = 100;
+int inputCanvasHeight = 100;
+int strokeWeight = 4; //Stroke weight 
+char inputKey = 'a';
+
+//Letters
+char[] letters = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'};
+int i = 0;
+
+//Booleans
+boolean allowRecord = true;
+boolean saveButtonPressed = false;
+boolean collectLetters = true; //allow collection of writing until after letter z
+boolean firstTime = true; //for adding Continue to Writing Buttons
+
+//User
+String name = "Kevin";
+PrintWriter output;
+
+//******************************************************************
+
+void setup()
+{
+  setupCanvas();
+  welcomeInstructions();
+}
+
+void draw()
+{
+  checkLetter(); //check to see if collected last letter
+  if (collectLetters) //make sure won't exceed array length
+  {
+    traceMouse();
+  }
+}
+
+//******************************************************************
+
+void traceMouse()
+{
+  if (allowRecord) //if not recording
+  {
+    beginRecord();
+    allowRecord = false; //now recording
+  }
+  if (mouseClicked == true && mouseButton != RIGHT) //If mouse is clicked and is not the right click carried over
+  {
+    line (pmouseX, pmouseY, mouseX, mouseY); //draw line
+    if (mouseX != pmouseX || mouseY != pmouseY)
+    {
+      output.println(mouseX + "," + mouseY);
+    }
+  }
+  exportKey(); //end recording if right click
+}
+
+void beginRecord() //begin recording
+{
+  beginRecord(PDF, name + "MouseDrawing" + letters[i] + ".pdf"); //name PDF
+  println("Begin recording of: " + letters[i]); //feedback
+  output = createWriter(name + letters[i] + ".txt"); //Name letter specific file
+}
+
+void exportKey()
+{
+  if (!allowRecord) //if recording
+  {
+    if (saveButtonPressed) //if save button pressed
+    {
+      println("Right click"); //feedback
+      endRecord(); //finish recording
+      output.flush(); //finish writing file
+      output.close(); //finish file
+      println("Saved recording of letter: " + letters[i]);
+      println("PDF file: " + name + "MouseDrawing" + letters[i] + ".pdf");
+      println("TXT file: " + name + letters[i] + ".pdf");
+      background(255); //clear screen
+      if (!allowRecord)
+      {
+        i++; //next letter
+        saveButtonPressed = false;
+      }
+      allowRecord = true;
+    }
+  }
+}
+      
+void welcomeInstructions()
+{
+  println("Drag mouse to record letter within square");
+  println("Right click to save the current letter");
+  println("Make sure you draw the entire letter in one click/drag");
+}
+
+void checkLetter()
+{
+  if (i >= 26)
+  {
+    if (collectLetters)
+    {
+      println("Finished collecting all letters");
+      exit();
+    }
+    collectLetters = false;
+  }
+}
+
+void mouseClicked() //mouse is clicked
+{
+  if (mouseButton == RIGHT && mouseButton != LEFT); //button clicked is right click
+  {
+    saveButtonPressed = true;
+  }
+}
+
+void mouseReleased() //button is released after being clicked
+{
+  if (mouseButton != LEFT); //button clicked is not the left
+  {
+    saveButtonPressed = false;
+  }
+}
+
+void mouseDragged()
+{
+  mouseClicked = true; //Allow drawing input
+}
+
+void mouseMoved()
+{
+  mouseClicked = false; //Prevent drawing input
+}
+
+void setupCanvas()
+{
+  size (inputCanvasWidth, inputCanvasHeight, P2D);
+  background (255);
+  fill (0);
+  strokeWeight(strokeWeight);
+}
